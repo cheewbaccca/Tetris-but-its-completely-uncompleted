@@ -25,12 +25,11 @@ class Tetris:
         self.moving_speed, self.delay_capacity = 360, 5600
         self.new_figure = True
         self.x, self.y = self.size[0] * self.KLETKA, self.size[1] * self.KLETKA
-        self.pause = True
         self.delay = 0
         self.delay_x = 0
         self.board = [[0] * self.size[0] for y in range(self.size[1])]  # игровое поле
         self.score = 0  # очки
-        self.max_score = 0
+        self.max_score = '0'
         self.timer = pygame.time.Clock()
         self.all_lines = 0  # количество всех сожженых линий
         self.background_image = pygame.image.load(r'Design\tetramino.jpg').convert()
@@ -40,6 +39,7 @@ class Tetris:
         self.tetris_title = self.font_for_title.render("Tetris", True, (255, 200, 0))
         self.color = (randint(40, 255), randint(40, 255), randint(40, 255))  # рандомный цвет первой фигуры
         self.line = 0  # количество линий,сожженых единоразово
+        self.transition = False
 
     def granica(self, x, y):  # определение границ поля
         if x < 0 or x == self.x or y + self.KLETKA >= self.y or self.board[y // self.KLETKA + 1][x // self.KLETKA]:
@@ -84,7 +84,7 @@ class Tetris:
 
     def main_loop(self):  # основной цикл игры
         while True:
-
+            self.max_score = self.get_max_score()
             self.blit()
             moving_x = 0
             self.line = 0
@@ -103,11 +103,6 @@ class Tetris:
                         self.figure.right_left['left'] = True
                     elif event.key == pygame.K_RIGHT:
                         self.figure.right_left['right'] = True
-                    elif event.key == pygame.K_SPACE:
-                        if self.pause:
-                            self.pause = False
-                        else:
-                            self.pause = True
                 elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
                         self.figure.right_left['left'] = False
@@ -160,7 +155,11 @@ class Tetris:
                     self.KLETKA - 1))
 
             self.redraw_board()  # рисование поля
-
+            if self.all_lines % 10 == 0 and self.all_lines != 0:  # при сожжении 10 линий скорость немного увеличивается
+                self.transition = True
+            if self.transition:
+                self.moving_speed += 10
+                self.transition = False
             self.endgame()
             # сетка
             [pygame.draw.rect(self.game_screen, (120, 120, 120),
@@ -197,6 +196,7 @@ class Tetris:
         menu.mainloop(self.screen)
 
     def start_the_game(self):
+
         self.screen.fill((0, 0, 0))
         self.main_loop()
 
@@ -204,23 +204,38 @@ class Tetris:
         for i in range(self.size[0]):
             if self.board[0][i]:
                 self.board = [[0] * self.size[0] for y in range(self.size[1])]
-                self.pause = True
-        if self.pause:
-            pygame.time.wait(100)
+                self.set_max_record()
+                self.score = 0
+                self.all_lines = 0
+                pygame.time.wait(800)
+                self.main_menu()
 
     def level_change(self, level, speed):  # смена уровня
         self.moving_speed = speed
         self.level = int(level[0][0])
         self.scores_dict = {0: 0, 1: 100 * self.level, 2: 300 * self.level, 3: 500 * self.level, 4: 800 * self.level}
 
+    def get_max_score(self):
+        try:
+            with open('scores') as file:
+                return file.readline()
+        except FileNotFoundError:
+            with open('scores', 'w') as file:
+                file.write('0')
+
+    def set_max_record(self):
+        with open('scores', 'w') as file:
+            file.write(str(max(int(self.max_score), self.score)))
+
     def blit(self):
         self.screen.blit(self.background_image, (-450, -400))
         self.screen.blit(self.game_screen, (10, 10))
         self.screen.blit(self.tetris_title, (350, 5))
         self.screen.blit(self.font_for_score.render(f"Score {self.score}", True, (0, 255, 0)), (350, 600))
-        self.screen.blit(self.font_for_score.render(f"Max Score {self.max_score}", True, (0, 255, 0)), (350, 630))
+        self.screen.blit(self.font_for_score.render(f"Max {self.max_score}", True, (0, 255, 0)), (350, 630))
         self.screen.blit(self.font_for_score.render(f"Next shape", True, (0, 255, 0)), (350, 370))
         self.screen.blit(self.font_for_score.render(f"Lines {self.all_lines}", True, (0, 255, 0)), (350, 300))
+
 
 class Shape:
     KLETKA = 33
@@ -249,5 +264,3 @@ class Shape:
             y = pxy.x + pxy.y - figure.figures[i].x
             figure.figures[i].x = x
             figure.figures[i].y = y
-
-
