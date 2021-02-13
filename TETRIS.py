@@ -34,12 +34,13 @@ class Tetris:
         self.all_lines = 0  # количество всех сожженых линий
         self.background_image = pygame.image.load(r'Design\tetramino.jpg').convert()
         self.figure = Shape(randint(0, 6))  # первая рандомная фигура
+        self.next_figure = Shape(randint(0, 6))
         self.font_for_title = pygame.font.Font(r'Design\10967.otf', 40)
         self.font_for_score = pygame.font.Font(r'Design\10967.otf', 18)
         self.tetris_title = self.font_for_title.render("Tetris", True, (255, 200, 0))
         self.color = (randint(40, 255), randint(40, 255), randint(40, 255))  # рандомный цвет первой фигуры
+        self.next_color = (randint(40, 255), randint(40, 255), randint(40, 255))
         self.line = 0  # количество линий,сожженых единоразово
-        self.transition = False
 
     def granica(self, x, y):  # определение границ поля
         if x < 0 or x == self.x or y + self.KLETKA >= self.y or self.board[y // self.KLETKA + 1][x // self.KLETKA]:
@@ -55,8 +56,18 @@ class Tetris:
                 shape.figures[i].y += self.KLETKA
                 if self.granica(shape.figures[i].x, shape.figures[i].y - 1):
                     for s in range(4):
-                        self.board[before_move.figures[s].y // self.KLETKA][
-                            before_move.figures[s].x // self.KLETKA] = self.color
+                        try:
+                            self.board[before_move.figures[s].y // self.KLETKA][
+                                before_move.figures[s].x // self.KLETKA] = self.color
+                        except IndexError:
+                            self.board[before_move.figures[s].y // self.KLETKA - 1][
+                                before_move.figures[s].x // self.KLETKA] = self.color
+                    self.delay_capacity = 5600
+                    self.figure = deepcopy(self.next_figure)
+                    self.color = self.next_color
+                    self.next_figure = Shape(randint(0, 6))
+
+                    self.next_color = (randint(40, 255), randint(40, 255), randint(40, 255))
                     self.new_figure = True
                     return True
 
@@ -92,8 +103,8 @@ class Tetris:
             if self.new_figure:  # новая фигура
                 self.new_figure = False
 
-                next_figure = Shape(randint(0, 6))  # следующая фигура
-                next_color = (randint(40, 255), randint(40, 255), randint(40, 255))
+                self.next_figure = Shape(randint(0, 6))  # следующая фигура
+                self.next_color = (randint(40, 255), randint(40, 255), randint(40, 255))
             self.game_screen.fill((0, 0, 0))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -126,7 +137,7 @@ class Tetris:
             elif self.figure.right_left['left']:
                 moving_x -= self.KLETKA
             before_move = deepcopy(self.figure)
-            self.delay_x += 560  # задержка по X
+            self.delay_x += 400  # задержка по X
             if self.delay_x > 2400:
                 self.delay_x = 0
                 for i in range(4):
@@ -137,29 +148,17 @@ class Tetris:
 
             self.moving_y(self.figure, before_move)  # движение по Y
 
-            if self.moving_y(self.figure, before_move):  # если фигура упала,рисуется следующая
-                self.figure = deepcopy(next_figure)
-                self.figure = deepcopy(next_figure)
-                next_figure = Shape(randint(0, 6))
-                self.color = next_color
-                next_color = (randint(40, 255), randint(40, 255), randint(40, 255))
-
             self.burn()
             self.score += self.scores_dict[self.line]
 
             for rect in range(4):  # рисование фигуры
                 pygame.draw.rect(self.game_screen, self.color, before_move.figures[rect])
             for rect in range(4):  # рисование следующей фигуры
-                pygame.draw.rect(self.screen, next_color, (
-                    next_figure.figures[rect].x + 250, next_figure.figures[rect].y + 400, self.KLETKA - 1,
+                pygame.draw.rect(self.screen, self.next_color, (
+                    self.next_figure.figures[rect].x + 250, self.next_figure.figures[rect].y + 400, self.KLETKA - 1,
                     self.KLETKA - 1))
 
             self.redraw_board()  # рисование поля
-            if self.all_lines % 10 == 0 and self.all_lines != 0:  # при сожжении 10 линий скорость немного увеличивается
-                self.transition = True
-            if self.transition:
-                self.moving_speed += 10
-                self.transition = False
             self.endgame()
             # сетка
             [pygame.draw.rect(self.game_screen, (120, 120, 120),
@@ -187,10 +186,9 @@ class Tetris:
         label.set_background_color((255, 255, 255))
         menu.add_button('START THE GAME', self.start_the_game)
         menu.add_selector('Select level',
-                          [('8', 320), ('9', 360),
-                           ('10', 400), ('11', 440),
-                           ('12', 480), ('13', 520),
-                           ('14', 540), ('15', 580)], onchange=self.level_change)
+                          [('8', 320), ('9', 340),
+                           ('10', 360), ('11', 540),
+                           ('12', 580)], onchange=self.level_change)
         menu.add_button('QUIT', pygame_menu.events.EXIT, button_id='Exit')
         menu.mainloop(self.screen)
 
