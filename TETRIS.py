@@ -35,7 +35,7 @@ class Tetris:
         self.background_image = pygame.image.load(r'Design\tetramino.jpg').convert()
         self.figure = Shape(randint(0, 6))  # первая рандомная фигура
         self.font_for_title = pygame.font.Font(r'Design\10967.otf', 40)
-        self.font_for_score = pygame.font.Font(r'Design\10967.otf', 20)
+        self.font_for_score = pygame.font.Font(r'Design\10967.otf', 18)
         self.tetris_title = self.font_for_title.render("Tetris", True, (255, 200, 0))
         self.color = (randint(40, 255), randint(40, 255), randint(40, 255))  # рандомный цвет первой фигуры
         self.line = 0  # количество линий,сожженых единоразово
@@ -185,7 +185,6 @@ class Tetris:
         label = pygame_menu.widgets.Label('TETRIS')
         label.set_position(100, 100)
         label.set_background_color((255, 255, 255))
-        menu.add_text_input('Your name is ', default='123')
         menu.add_button('START THE GAME', self.start_the_game)
         menu.add_selector('Select level',
                           [('8', 320), ('9', 360),
